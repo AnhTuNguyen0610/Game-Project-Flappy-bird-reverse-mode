@@ -1,93 +1,87 @@
 import pygame
-import random
-import math
+from bird import Bird
+from pipe import Pipe
+from constants import *
 
-pygame.init()
+class Game:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Flappy Bird - Reverse Mode")
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.SysFont(None, 40)
 
-WIDTH, HEIGHT = 500, 700
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Flappy Bird - Reverse Mode")
+        self.reset()
 
-WHITE = (255, 255, 255)
-GREEN = (0, 200, 0)
-RED = (255, 0, 0)
+    def reset(self):
+        self.bird = Bird(x=100, y=HEIGHT // 2, assets=self.assets)
+        self.pipe = Pipe(x=WIDTH, y=HEIGHT // 2, assets=self.assets)
+        self.score = 0
+        self.speed_timer = 0
+        self.speed_interval = 500
+        self.running = True
 
-font = pygame.font.SysFont(None, 40)
+    def run(self):
+        while self.running:
+            self.clock.tick(60)
+            self.handle_events()
+            self.update()
+            self.draw()
 
-bird_radius = 20
-bird_x = 100
-bird_timer = 0
-oscillation_speed = 0.04
-oscillation_amplitude = 80
-phase_shift = random.uniform(0, math.pi * 2)
+        pygame.quit()
 
-pipe_width = 80
-pipe_gap = 180
-pipe_x = WIDTH
-pipe_y = HEIGHT // 2
-pipe_speed = 4
-pipe_move_direction = 0
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    self.pipe.set_move_direction(-1)
+                elif event.key == pygame.K_DOWN:
+                    self.pipe.set_move_direction(1)
+            elif event.type == pygame.KEYUP:
+                if event.key in [pygame.K_UP, pygame.K_DOWN]:
+                    self.pipe.set_move_direction(0)
 
-speed_increase_timer = 0
-speed_interval = 500  
+    def update(self):
+        self.bird.update()
+        self.pipe.update()
 
-score = 0
+        # Kiểm tra va chạm
+        bird_rect = self.bird.get_rect()
+        if bird_rect.colliderect(self.pipe.get_top_rect()) or bird_rect.colliderect(self.pipe.get_bottom_rect()):
+            self.game_over()
 
-clock = pygame.time.Clock()
-running = True
+        # Kiểm tra ống ra khỏi màn hình
+        if self.pipe.is_off_screen():
+            self.pipe.reset_position()
+            self.score += 1
 
-while running:
-    clock.tick(60)
-    screen.fill(WHITE)
+        # Tăng độ khó dần theo thời gian
+        self.speed_timer += 1
+        if self.speed_timer >= self.speed_interval:
+            self.bird.oscillation_speed += 0.005
+            self.pipe.speed += 0.3
+            self.speed_timer = 0
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                pipe_move_direction = -1
-            elif event.key == pygame.K_DOWN:
-                pipe_move_direction = 1
-        elif event.type == pygame.KEYUP:
-            if event.key in [pygame.K_UP, pygame.K_DOWN]:
-                pipe_move_direction = 0
+    def draw(self):
+        self.screen.fill(WHITE)
+        self.bird.draw(self.screen)
+        self.pipe.draw(self.screen)
 
-    pipe_y += pipe_move_direction * pipe_speed
-    pipe_y = max(pipe_gap // 2, min(HEIGHT - pipe_gap // 2, pipe_y))
-    pipe_x -= 5
-    if pipe_x + pipe_width < 0:
-        pipe_x = WIDTH
-        pipe_y = random.randint(150, HEIGHT - 150)
-        score += 1
+        score_text = self.font.render(f"Score: {self.score}", True, BLACK)
+        self.screen.blit(score_text, (10, 10))
 
-    bird_timer += 1
-    bird_y = HEIGHT // 2 + math.sin(bird_timer * oscillation_speed + phase_shift) * oscillation_amplitude
-    bird_y += math.sin(bird_timer * 0.1) * 10  
+        pygame.display.flip()
 
-    pygame.draw.circle(screen, RED, (int(bird_x), int(bird_y)), bird_radius)
-
-    top_rect = pygame.Rect(pipe_x, 0, pipe_width, pipe_y - pipe_gap // 2)
-    bottom_rect = pygame.Rect(pipe_x, pipe_y + pipe_gap // 2, pipe_width, HEIGHT - pipe_y)
-    pygame.draw.rect(screen, GREEN, top_rect)
-    pygame.draw.rect(screen, GREEN, bottom_rect)
-
-    bird_rect = pygame.Rect(bird_x - bird_radius, bird_y - bird_radius, bird_radius * 2, bird_radius * 2)
-    if bird_rect.colliderect(top_rect) or bird_rect.colliderect(bottom_rect):
-        text = font.render("Game Over!", True, RED)
-        screen.blit(text, (WIDTH // 2 - 80, HEIGHT // 2 - 20))
+    def game_over(self):
+        text = self.font.render("Game Over!", True, RED)
+        self.screen.blit(text, (WIDTH // 2 - 80, HEIGHT // 2 - 20))
         pygame.display.flip()
         pygame.time.delay(2000)
-        running = False
+        self.running = False
 
-    speed_increase_timer += 1
-    if speed_increase_timer >= speed_interval:
-        oscillation_speed += 0.005
-        pipe_speed += 0.3
-        speed_increase_timer = 0
 
-    score_text = font.render(f"Score: {score}", True, (0, 0, 0))
-    screen.blit(score_text, (10, 10))
-
-    pygame.display.flip()
-
-pygame.quit()
+if __name__ == "__main__":
+    game = Game()
+    game.run()
