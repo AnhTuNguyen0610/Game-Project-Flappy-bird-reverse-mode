@@ -2,6 +2,7 @@ import pygame
 from bird import Bird
 from pipe import Pipe
 from constants import *
+from assetmanager import AssetManager
 
 class Game:
     def __init__(self):
@@ -11,6 +12,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(None, 40)
 
+        self.assets = AssetManager()
         self.reset()
 
     def reset(self):
