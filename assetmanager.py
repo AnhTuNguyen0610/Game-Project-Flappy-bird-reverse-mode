@@ -75,9 +75,9 @@ class AssetManager:
     
     def load_sounds(self):
         try:
-            self.point_sound = pygame.mixer.Sound("sound/collect-points-190037.mp3")
-            self.hit_sound = pygame.mixer.Sound("sound/game-over-2-sound-effect-230463.mp3")
-            self.wing_sound = pygame.mixer.Sound("sound/wood-effect-254997.mp3")
+            self.point_sound = pygame.mixer.Sound("sounds/collect-points-190037.mp3")
+            self.hit_sound = pygame.mixer.Sound("sounds/game-over-2-sound-effect-230463.mp3")
+            self.wing_sound = pygame.mixer.Sound("sounds/wood-effect-254997.mp3")
         except:
             print("Sound files not found. Playing without sound.")
             self.point_sound = None
